@@ -6546,6 +6546,46 @@ router.get("/:id/smart-contract-interactions", async (req, res, next) => {
   }
 });
 
+/**
+ * GET /account/:id/trustline-limits
+ *
+ * Returns each non-native trustline with its capacity utilization and a
+ * nearLimit flag when usage is at or above 90% of the trustline limit.
+ *
+ * Returns an empty trustlines array when the account holds no issued assets.
+ * Returns usedPercent: 0 for trustlines whose limit is zero.
+ *
+ * Response shape:
+ *   { accountId, trustlines: [{ asset, balance, limit, usedPercent, nearLimit }] }
+ */
+router.get("/:id/trustline-limits", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    validateAccountId(id);
+
+    const account = await withHorizonTiming(req, () => server.loadAccount(id));
+
+    const trustlines = (account.balances || [])
+      .filter((b) => isNonNativeAsset(b))
+      .map((b) => {
+        const balance = parseFloat(b.balance || "0");
+        const limit = parseFloat(b.limit || "0");
+        const usedPercent = limit > 0 ? (balance / limit) * 100 : 0;
+        return {
+          asset: normalizeAsset(b.asset_code, b.asset_issuer, b.asset_type),
+          balance: toSevenDecimalString(b.balance),
+          limit: toSevenDecimalString(b.limit),
+          usedPercent: parseFloat(usedPercent.toFixed(4)),
+          nearLimit: usedPercent >= 90,
+        };
+      });
+
+    return success(res, { accountId: account.id, trustlines });
+  } catch (err) {
+    handleAccountNotFound(err, next, req.params.id);
+  }
+});
+
 module.exports = router;
 
 // SHELL_SYNC_MARKER

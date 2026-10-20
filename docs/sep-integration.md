@@ -498,6 +498,7 @@ Continue polling `GET $DIRECT_PAYMENT_SERVER/transactions/$SEP31_ID` or use a SE
 
 ## Related documentation
 
+- [Anchor Integration Guide](anchor-integration.md) — Discover anchors, check SEP-24 support, and run deposit flow preflights using StellarKit
 - [Getting Started](getting-started.md)
 - [Account Endpoints](account-endpoints.md)
 - [Streaming](streaming.md)
